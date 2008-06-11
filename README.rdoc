@@ -1,0 +1,63 @@
+= WrapsAttribute
+
+This makes it easier to handle data like phone numbers with ActiveRecord,  
+
+Use a simple wrapper class to do validation, normalization, and formatting of ActiveRecord attributes.
+
+For example, here's a simple class to wrap around a phone number field.
+
+  class PhoneNumber < String
+    def initialize(value)
+      super(value || '')
+    end
+
+    def normalize
+      gsub(' ', '')
+    end
+
+    def valid?
+      normalize =~ /\A[0-9]+\Z/
+    end
+  end
+
+In your ActiveRecord class, include:
+
+  wraps_attribute :phone_number, PhoneNumber
+  
+This does a few things.
+
+== Normalisation
+
+Before the attribute is validated, it will get run through the +normalize+ method.
+
+== Validation
+
+By default, the +valid?+ method will be called to validate the attribute.
+
+You can specify that another method by used by passing the :validate option to +wraps_attribute+.
+
+You can 
+
+== Formatting
+
+
+
+
+By default, the +valid?+ method on the wrapper class will be called
+to validate the attribute. You can override this by passing the
++validate+ option to wraps_attribute:
+
+  wraps_attribute :phone, PhoneNumber, :validate => :valid_mobile?, :message => "must be a valid mobile number"
+
+You can also disable automatic validation and use the regular ActiveRecord
+validation methods:
+
+  wraps_attribute :phone, PhoneNumber, :validate => false
+  validates_length_of :phone, :minimum => 6
+  
+== Installation
+
+ruby script/plugin install git://github.com/notahat/wraps_attribute.git
+  
+  
+Copyright (c) 2008 Peter Yandell, released under the MIT license

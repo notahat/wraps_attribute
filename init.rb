@@ -1,0 +1,1 @@
+require 'wraps_attribute'
