@@ -4,7 +4,7 @@ module ActiveRecord
       base.extend(ClassMethods)
     end
   
-    module ClassMethods #:nodoc:
+    module ClassMethods
       def wraps_attribute(attribute, wrapper_class, options = {})
         options = { :validate => :valid?, :message => "must be valid" }.merge(options)
         
@@ -28,7 +28,7 @@ module ActiveRecord
     end
   end
   
-  class Base #:nodoc:
+  class Base
     include WrapsAttribute
   end
 end
