@@ -1,63 +1,91 @@
 = WrapsAttribute
 
-This makes it easier to handle data like phone numbers with ActiveRecord,  
+The wraps_attribute Rails plugin lets you extract validation and normalisation
+of ActiveRecord attributes into a class.
 
-Use a simple wrapper class to do validation, normalization, and formatting of ActiveRecord attributes.
+== Example
 
-For example, here's a simple class to wrap around a phone number field.
+The following is a simple class that validates and normalizes Australian phone
+numbers.
 
   class PhoneNumber < String
     def initialize(value)
       super(value || '')
     end
 
+    # Convert the phone number from local Australian format
+    # (0x xxxx xxxx, or variations) to a compact international
+    # format (61xxxxxxxxx).
     def normalize
-      gsub(' ', '')
+      tr(' ()-', '').gsub(/\A\+/, '').gsub(/\A0/, '61')
+    end
+
+    # Returns true if the number is a valid Australian mobile phone number.
+    # Australian mobiles take the form: 04xx xxx xxx
+    def valid_australian_mobile?
+      normalize =~ /\A614\d{8}\Z/ && true
+    end
+    
+    # Returns true if the number is a valid Australian landline number.
+    # Australian landline numbers take the form: (0n) xxxx xxxx
+    # where n is the area code (2 for Sydney, 3 for Melbourne, etc.)
+    def valid_australian_landline?
+      normalize =~ /\A61[^4]\d{8}\Z/ && true
     end
 
     def valid?
-      normalize =~ /\A[0-9]+\Z/
+      valid_australian_mobile? || valid_australian_landline?
+    end
+
+    # Return the phone number formatted for output.
+    def format
+      number = normalize
+      if valid_australian_mobile?
+        "0#{number[2..4]} #{number[5..7]} #{number[8..10]}"
+      elsif valid_australian_landline?
+        "(0#{number[2..2]}) #{number[3..6]} #{number[7..10]}"
+      else
+        self
+      end
     end
   end
-
-In your ActiveRecord class, include:
-
-  wraps_attribute :phone_number, PhoneNumber
   
-This does a few things.
+In your ActiveRecord model, you just do something like this:
 
-== Normalisation
+  class Person < ActiveRecord::Base
+    wraps_attribute :phone_number, PhoneNumber
+  end
 
-Before the attribute is validated, it will get run through the +normalize+ method.
+That does a few things:
 
-== Validation
+1. Before validations are done, the +normalize+ method is used to convert the phone
+   number to a canonical format to be stored in the database.
+   
+2. The <tt>valid</tt> method is used to validate the number when ActiveRecord does its
+   validations.
+   
+== Validation options
 
-By default, the +valid?+ method will be called to validate the attribute.
+If you want to use a different method than <tt>valid?</tt> for validation, use something like:
 
-You can specify that another method by used by passing the :validate option to +wraps_attribute+.
+  wraps_attribute :mobile_number, PhoneNumber, :validate => :valid_australian_mobile?
+  
+You can also turn off automatic validation entirely with:
 
-You can 
+  wraps_attribute :phone_number, PhoneNumber, :validate => false
+  
+You can allow blank values for the attribute with:
 
-== Formatting
+  wraps_attribute :phone_number, PhoneNumber, :allow_blank => true
+  
+You can specify a custom ActiveRecord error message to use on validation failure with:
 
-
-
-
-By default, the +valid?+ method on the wrapper class will be called
-to validate the attribute. You can override this by passing the
-+validate+ option to wraps_attribute:
-
-  wraps_attribute :phone, PhoneNumber, :validate => :valid_mobile?, :message => "must be a valid mobile number"
-
-You can also disable automatic validation and use the regular ActiveRecord
-validation methods:
-
-  wraps_attribute :phone, PhoneNumber, :validate => false
-  validates_length_of :phone, :minimum => 6
+  wraps_attribute :phone_number, PhoneNumber, :message => "must be a valid Australian phone number"
+  
+Regular ActiveRecord validations also work with wrapped attributes. The attribute
+is normalized before validations are fun.
+  
   
 == Installation
 
-ruby script/plugin install git://github.com/notahat/wraps_attribute.git
-  
-  
-Copyright (c) 2008 Peter Yandell, released under the MIT license
+  ruby script/plugin install git://github.com/notahat/wraps_attribute.git
