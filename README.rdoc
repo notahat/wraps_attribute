@@ -56,7 +56,7 @@ In your ActiveRecord model, you just do something like this:
     wraps_attribute :phone_number, PhoneNumber
   end
 
-That does a few things:
+That does a couple of things:
 
 1. Before validations are done, the +normalize+ method is used to convert the phone
    number to a canonical format to be stored in the database.
@@ -83,7 +83,7 @@ You can specify a custom ActiveRecord error message to use on validation failure
   wraps_attribute :phone_number, PhoneNumber, :message => "must be a valid Australian phone number"
   
 Regular ActiveRecord validations also work with wrapped attributes. The attribute
-is normalized before validations are fun.
+is normalized before validations are run.
   
   
 == Installation
